@@ -1,4 +1,5 @@
 #![feature(euclidean_division, test)]
+#![allow(unused, non_snake_case)]
 mod math;
 mod util;
 mod ds_helper;
@@ -21,8 +22,8 @@ extern crate test;
 //extern crate numeric_literals;
 
 pub fn run_large_search() {
-    (-100_000_000..=100_000_000i64).into_par_iter().for_each(|a| {
-        for b in 1..=100i64 {
+    (-100_000_000..=100_000_000i128).into_par_iter().for_each(|a| {
+        for b in 1..=100i128 {
             let b = b*b*b*b;
             // Analytic bound (should be above or below gcd?)
             let flo:f32 = (a as f32) / (b as f32);
@@ -49,8 +50,8 @@ pub fn run_large_search() {
 }
 
 pub fn run_smaller_search() {
-    (-1_000_000..=1_000_000i64).into_par_iter().for_each(|a| {
-        for b in 1..=37i64 {
+    (-1_000_000..=1_000_000i128).into_par_iter().for_each(|a| {
+        for b in 1..=37i128 {
             let b = b*b*b*b;
             // Analytic bound (should be above or below gcd?)
             let flo:f32 = (a as f32) / (b as f32);
@@ -78,8 +79,8 @@ pub fn run_smaller_search() {
 
 fn main() {
     let mut output = "".to_string();
-            (-3_000..=3_000i64).into_iter().for_each(|a| {
-                for b in 1..=26i64 {
+            (-3_000..=3_000i128).into_iter().for_each(|a| {
+                for b in 1..=26i128 {
                     let b = b*b;
                     // Analytic bound (should be above or below gcd?)
                     let flo:f32 = (a as f32) / (b as f32);
@@ -130,8 +131,8 @@ mod tests {
     #[test]
     fn test_functionality() {
         let mut output = "".to_string();
-        (-100_000..=100_000i64).into_iter().for_each(|a| {
-            for b in 1..=60i64 {
+        (-100_000..=100_000i128).into_iter().for_each(|a| {
+            for b in 1..=60i128 {
                 let b = b*b;
                 // Analytic bound (should be above or below gcd?)
                 let flo:f32 = (a as f32) / (b as f32);
@@ -196,11 +197,34 @@ Manually check -29/16
     }
 
     #[bench]
+    fn bench_large_example(b: &mut Bencher) {
+        b.iter(|| {
+            let fc = PolynomialInQ::from(
+                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(-5649488755,639128961)]
+            );
+
+            let res = possible_periods_search(fc, 1);
+
+            assert!(res.unwrap().contains(&2));
+
+            // Wrong example
+
+            let fc = PolynomialInQ::from(                                                                  //       v--- notice the 4
+                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(-5649488754,639128961)]
+            );
+
+            let res = possible_periods_search(fc, 1);
+
+            assert!(res.is_none());
+        })
+    }
+
+    #[bench]
     fn bench_search_speed_test(b: &mut Bencher) {
         b.iter(|| {
             let mut output = "".to_string();
-            (-3_000..=3_000i64).into_iter().for_each(|a| {
-                for b in 1..=26i64 {
+            (-3_000..=3_000i128).into_iter().for_each(|a| {
+                for b in 1..=26i128 {
                     let b = b*b;
                     // Analytic bound (should be above or below gcd?)
                     let flo:f32 = (a as f32) / (b as f32);
