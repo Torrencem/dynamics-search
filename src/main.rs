@@ -50,7 +50,7 @@ pub fn run_large_search() {
 }
 
 pub fn run_smaller_search() {
-    (-1_000_000..=1_000_000i128).into_par_iter().for_each(|a| {
+    (-1_000_000..=1_000_000i128).into_iter().for_each(|a| {
         for b in 1..=37i128 {
             let b = b*b*b*b;
             // Analytic bound (should be above or below gcd?)
@@ -78,45 +78,7 @@ pub fn run_smaller_search() {
 }
 
 fn main() {
-    let mut output = "".to_string();
-            (-3_000..=3_000i128).into_iter().for_each(|a| {
-                for b in 1..=26i128 {
-                    let b = b*b;
-                    // Analytic bound (should be above or below gcd?)
-                    let flo:f32 = (a as f32) / (b as f32);
-                    if flo > -0.913942 {
-                        continue;
-                    }
-                    let g = a.gcd(&b);
-                    if g != 1 && g != -1 {
-                        continue;
-                    }
-                    let fc = PolynomialInQ::from(
-                        vec![Rational::one(), Rational::zero(), Rational::new(a, b)]
-                    );
-
-                    let res = possible_periods_search(fc, 2);
-
-                    if let Some(possibilities) = res {
-                        output += format!("Manually check {}/{}\n(for: {:?})\n", a, b, possibilities).as_ref();
-                    }
-                }
-            });
-
-            let correct_output = 
-r"Manually check -2689/576
-(for: {3})
-Manually check -1849/576
-(for: {3})
-Manually check -421/144
-(for: {3})
-Manually check -301/144
-(for: {3})
-Manually check -29/16
-(for: {3})
-";
-            println!("\n\n{}\n\n{}",output, correct_output);
-            assert!(correct_output == output);
+    run_smaller_search();
 
     println!("Completed search!");
 }

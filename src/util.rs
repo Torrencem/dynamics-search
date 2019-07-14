@@ -42,13 +42,27 @@ impl Polynomial {
         let mut res = 0;
         for indx in 0..e-1 {
             res += self.coeffs[indx];
-            res *= x;
             if let Some(p) = self.p_mod {
-                res %= p;
+                let r = res.checked_mul(x);
+                match r {
+                    None => {
+                        res %= p;
+                        res *= x;
+                    },
+                    Some(r) => {
+                        res = r;
+                    }
+                }
+            } else {
+                res *= x;
             }
         }
         res += self.coeffs[e-1];
-        res
+        if let Some(p) = self.p_mod {
+            res % p
+        } else {
+            res
+        }
     }
 
     pub fn derivative(&self) -> Polynomial {
@@ -76,7 +90,17 @@ impl Polynomial {
         if let Some(p_mod) = self.p_mod {
             orbit.into_iter().map(|a| {
                 s_der.eval(a)
-            }).fold(1, |sum, i| (sum * i) % p_mod ).rem_euclid(p_mod)
+            }).fold(1i64, |prod, i| {
+                let r = prod.checked_mul(i);
+                match r {
+                    None => {
+                        (prod % p_mod) * i
+                    },
+                    Some(r) => {
+                        r
+                    }
+                }
+            }).rem_euclid(p_mod)
         } else {
             orbit.into_iter().map(|a| {
                 s_der.eval(a)
@@ -131,7 +155,7 @@ impl PolynomialInQ {
 
     pub fn do_reduction(&self, p: usize) -> Polynomial {
         let coeffs = self.coeffs.iter().map(|c| {
-            ((c.numer % (p as i128)) as i64) * mod_inverse((c.denom % (p as i128)) as i64, p as i64)
+            ((c.numer % (p as i128)) as i64) * mod_inverse((c.denom % (p as i128)) as i64, p as i64) % (p as i64)
         }).collect();
 
         Polynomial::new(coeffs, Some(p as i64))

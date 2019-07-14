@@ -4,3 +4,5 @@
 perf.data
 perf.data.old
 flame.svg
+flame2.svg
+heaptrack.*

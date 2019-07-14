@@ -11,4 +11,4 @@ rayon = "1.1"
 #flint = { path = "./flint-rust/" }
 
 [profile.release]
-#debug = true
+debug = true
