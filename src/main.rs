@@ -22,8 +22,8 @@ extern crate test;
 //extern crate numeric_literals;
 
 pub fn run_large_search() {
-    (-100_000_000..=100_000_000i128).into_par_iter().for_each(|a| {
-        for b in 1..=100i128 {
+    (-1_000_000_000..=1_000_000_000i128).into_par_iter().for_each(|a| {
+        for b in 1..=177i128 {
             let b = b*b*b*b;
             // Analytic bound (should be above or below gcd?)
             let flo:f32 = (a as f32) / (b as f32);
@@ -34,6 +34,18 @@ pub fn run_large_search() {
             if g != 1 && g != -1 {
                 continue;
             }
+
+            if b % 3 != 0 && b % 5 != 0 {
+                let mod3 = (a % 3) * (mod_inverse(b % 3, 3)) % 3;
+                if mod3 == 2 {
+                    continue;
+                }
+                let mod5 = (a % 5) * (mod_inverse(b % 5, 5)) % 5;
+                if mod5 == 4 {
+                    continue;
+                }
+            }
+
             let fc = PolynomialInQ::from(
                 vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(a, b)]
             );
@@ -78,7 +90,7 @@ pub fn run_smaller_search() {
 }
 
 fn main() {
-    run_smaller_search();
+    run_large_search();
 
     println!("Completed search!");
 }
