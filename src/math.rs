@@ -130,7 +130,7 @@ pub fn lcm_all<T: Integer + Copy>(v: &[T]) -> T {
 pub fn multiplicative_order<T: Integer + Copy>(a: T, p: T) -> u32 {
     let mut res = 1;
     let mut curr = a;
-    assert!(a != T::zero());
+    debug_assert!(a > T::zero());
     while curr != T::one() {
         curr = curr * a;
         curr = curr % p;

@@ -78,19 +78,18 @@ pub fn possible_periods(f: PolynomialInQ, goal: Option<usize>) -> (bool, HashSet
 pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     let p = f.p_mod.unwrap();
 
-    let mut point_table = vec![(0, 0); (p*p) as usize];
+    let mut point_table = vec![(0, 0); p as usize];
     let mut index = 2; // 2 to account for the point at infinity
     let mut periods = HashSet::new();
-    periods.insert(1); // again for the point at infinity
 
     for p_start in 0..p {
         let mut P = p_start;
-        let mut hash_p = (P + p) as usize;
+        let mut hash_p = P as usize;
         if point_table[hash_p].1 == 0 {
             let startindex = index;
             while point_table[hash_p].1 == 0 {
                 point_table[hash_p].1 = index;
-                let Q = f.eval(P).rem_euclid(p);
+                let Q = f.eval(P);
                 let hash_q = Q as usize;
                 point_table[hash_p].0 = hash_q;
                 P = Q;

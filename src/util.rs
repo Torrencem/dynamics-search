@@ -59,7 +59,7 @@ impl Polynomial {
         }
         res += self.coeffs[e-1];
         if let Some(p) = self.p_mod {
-            res % p
+            res.rem_euclid(p)
         } else {
             res
         }
