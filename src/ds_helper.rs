@@ -79,7 +79,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     let p = f.p_mod.unwrap();
 
     let mut point_table = vec![(0, 0); p as usize];
-    let mut index = 2; // 2 to account for the point at infinity
+    let mut index = 1;
     let mut periods = HashSet::new();
 
     for p_start in 0..p {
