@@ -4,6 +4,7 @@ mod math;
 mod util;
 mod ds_helper;
 
+use math::*;
 use util::*;
 use ds_helper::*;
 use rayon::prelude::*;
@@ -15,9 +16,14 @@ extern crate rayon;
 extern crate test;
 
 pub fn run_large_search() {
-    (-1_000_000_000..=1_000_000_000i128).into_par_iter().for_each(|a| {
-        for b in 1..=177i128 {
+    (-10_000_000_000..=10_000_000_000i128).into_par_iter().for_each(|a| {
+        for b in 1..=158i128 {
+            let b = 2*b;
             let b = b*b*b*b;
+            // Did this come up in our old search?
+            if a.abs() < 1_000_000_000 && b < 1_000_000_000 {
+                continue;
+            }
             let flo:f32 = (a as f32) / (b as f32);
             if flo > -0.913942 {
                 continue;
@@ -25,6 +31,21 @@ pub fn run_large_search() {
             let g = a.gcd(&b);
             if g != 1 && g != -1 {
                 continue;
+            }
+            // Check for 2 mod 3 or 4 mod 5 cases
+            // Does a/b have reduction mod 3?
+            if b % 3 != 0 {
+                // is a/b = 2 mod 3?
+                if (a * mod_inverse(b % 3, 3)).rem_euclid(3) == 2 {
+                    continue;
+                }
+            }
+            // Does a/b have reduction mod 5?
+            if b % 5 != 0 {
+                // is a/b = 4 mod 5?
+                if (a * mod_inverse(b % 5, 5)).rem_euclid(5) == 4 {
+                    continue;
+                }
             }
             // Create z^4 + c from it's coefficients (1, 0, 0, 0, a/b)
             let fc = PolynomialInQ::from(
