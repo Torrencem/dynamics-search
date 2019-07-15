@@ -7,7 +7,7 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     let mut res = HashSet::new();
     let mut first = true;
     for p in 2..=100 {
-        if small_prime(p) && f.has_reduction(p) {
+        if small_prime(p) && f.has_good_reduction(p) {
             if first {
                 res = fast_possible_periods(f.do_reduction(p));
                 first = false;
@@ -37,11 +37,12 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     Some(res)
 }
 
-pub fn possible_periods(f: PolynomialInQ, goal: Option<usize>) -> (bool, HashSet<usize>) {
+#[allow(unused)]
+pub fn possible_periods(f: PolynomialInQ, prime_bound: usize) -> HashSet<usize> {
     let mut res = HashSet::new();
     let mut first = true;
-    for p in 2..=100 {
-        if small_prime(p) && f.has_reduction(p) {
+    for p in 2..=prime_bound {
+        if small_prime(p) && f.has_good_reduction(p) {
             if first {
                 res = fast_possible_periods(f.do_reduction(p));
                 first = false;
@@ -49,30 +50,10 @@ pub fn possible_periods(f: PolynomialInQ, goal: Option<usize>) -> (bool, HashSet
                 let pers = fast_possible_periods(f.do_reduction(p));
                 res = res.intersection(&pers).map(|&x| x).collect();
             }
-            if let Some(max_cycle_len) = goal {
-                // Check if our set contains anything
-                // large enough to be interesting
-                let mut found = false;
-                for possible in &res {
-                    if *possible > max_cycle_len {
-                        found = true;
-                        break;
-                    }
-                }
-                if !found {
-                    return (false, res);
-                }
-            }
         }
     }
 
-    // Remove everything not in the goal
-    if let Some(max_cycle_len) = goal {
-        let not_interesting: HashSet<_> = (0..=max_cycle_len).collect();
-        res = res.difference(&not_interesting).map(|&x| x).collect();
-    }
-
-    (true, res)
+    res
 }
 
 pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {

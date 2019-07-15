@@ -1,5 +1,5 @@
 #![feature(euclidean_division, test)]
-#![allow(unused, non_snake_case)]
+#![allow(non_snake_case)]
 mod math;
 mod util;
 mod ds_helper;
@@ -11,15 +11,9 @@ use rayon::prelude::*;
 
 use num_integer::{Integer};
 
-// use flint::fmpz_poly::*;
-// use flint::arith::*;
-// use flint::fmpz::Fmpz;
-// use flint::traits::*;
-
 extern crate num_integer;
 extern crate rayon;
 extern crate test;
-//extern crate numeric_literals;
 
 pub fn run_large_search() {
     (-1_000_000_000..=1_000_000_000i128).into_par_iter().for_each(|a| {
@@ -57,36 +51,6 @@ pub fn run_large_search() {
             }
         }
     });
-
-    println!("Completed Search!");
-}
-
-pub fn run_smaller_search() {
-    (-1_000_000..=1_000_000i128).into_iter().for_each(|a| {
-        for b in 1..=37i128 {
-            let b = b*b*b*b;
-            // Analytic bound (should be above or below gcd?)
-            let flo:f32 = (a as f32) / (b as f32);
-            if flo > -0.913942 {
-                continue;
-            }
-            let g = a.gcd(&b);
-            if g != 1 && g != -1 {
-                continue;
-            }
-            let fc = PolynomialInQ::from(
-                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(a, b)]
-            );
-
-            let res = possible_periods_search(fc, 2);
-
-            if let Some(possibilities) = res {
-                println!("Manually check {}/{}\n(for: {:?})", a, b, possibilities);
-            }
-        }
-    });
-
-    println!("Completed search!");
 }
 
 fn main() {
@@ -200,7 +164,7 @@ Manually check -29/16
             (-3_000..=3_000i128).into_iter().for_each(|a| {
                 for b in 1..=26i128 {
                     let b = b*b;
-                    // Analytic bound (should be above or below gcd?)
+                    // Random Analytic bound (doesn't actually apply for z^2 case?)
                     let flo:f32 = (a as f32) / (b as f32);
                     if flo > -0.913942 {
                         continue;

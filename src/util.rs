@@ -1,5 +1,3 @@
-use num_integer::{Integer};
-
 use std::fmt;
 
 use crate::math::*;
@@ -15,30 +13,8 @@ impl Polynomial {
         Polynomial { coeffs: v, p_mod: p_mod }
     }
 
-    pub fn from(v: Vec<i64>) -> Polynomial {
-        Polynomial { coeffs: v, p_mod: None }
-    }
-
-    pub fn slow_eval(&self, x: i64) -> i64 {
-        let mut e = self.coeffs.len() as u32;
-        let mut res = 0;
-
-        for i in 0usize..self.coeffs.len() {
-            let c = self.coeffs[i];
-            e -= 1;
-            if c != 0 {
-                res += x.pow(e) * c;
-                if let Some(p_mod) = self.p_mod {
-                    res %= p_mod; // TODO: Use something faster
-                }
-            }
-        }
-
-        res
-    }
-
     pub fn eval(&self, x: i64) -> i64 {
-        let mut e = self.coeffs.len();
+        let e = self.coeffs.len();
         let mut res = 0;
         for indx in 0..e-1 {
             res += self.coeffs[indx];
@@ -144,7 +120,7 @@ impl PolynomialInQ {
         PolynomialInQ {coeffs: coeffs}
     }
 
-    pub fn has_reduction(&self, p: usize) -> bool {
+    pub fn has_good_reduction(&self, p: usize) -> bool {
         for c in &self.coeffs {
             if c.denom % (p as i128) == 0 {
                 return false;
