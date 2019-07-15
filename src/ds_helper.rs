@@ -59,6 +59,9 @@ pub fn possible_periods(f: PolynomialInQ, prime_bound: usize) -> HashSet<usize> 
 pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     let p = f.p_mod.unwrap();
 
+    // We don't need the point at infinity, so we
+    // can use an array of size p instead of p^2
+    //    (also, this way, hash_point = id)
     let mut point_table = vec![(0, 0); p as usize];
     let mut index = 1;
     let mut periods = HashSet::new();
@@ -86,7 +89,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
                 if charpoly_constant == 0 {
                     continue; // Exclude 0
                 }
-                // It's both
+                // lrorder is both lorder and rorder from sage
                 let lrorder = multiplicative_order(charpoly_constant, p);
                 
                 let r = lrorder as usize;
