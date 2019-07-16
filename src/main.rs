@@ -15,6 +15,7 @@ extern crate num_integer;
 extern crate rayon;
 extern crate test;
 #[macro_use] extern crate lazy_static;
+#[macro_use] extern crate cached;
 
 pub fn run_large_search() {
     (-10_000_000_000..=10_000_000_000i128).into_par_iter().for_each(|a| {
@@ -164,6 +165,50 @@ Manually check -29/16
 
             assert!(res.is_none());
         })
+    }
+
+    #[bench]
+    fn bench_conditions(ben: &mut Bencher) {
+        let (a, b) = (-3749999571i128, 3906250000i128);
+        ben.iter(|| {
+            let flo:f32 = (a as f32) / (b as f32);
+            if flo > -0.913942 {
+                panic!();
+            }
+            let g = a.gcd(&b);
+            if g != 1 && g != -1 {
+                panic!();
+            }
+            // Check for 2 mod 3 or 4 mod 5 cases
+            // Does a/b have reduction mod 3?
+            if b % 3 != 0 {
+                // is a/b = 2 mod 3?
+                if (a * mod_inverse(b % 3, 3)).rem_euclid(3) == 2 {
+                    panic!();
+                }
+            }
+            // Does a/b have reduction mod 5?
+            if b % 5 != 0 {
+                // is a/b = 4 mod 5?
+                if (a * mod_inverse(b % 5, 5)).rem_euclid(5) == 4 {
+                    panic!();
+                }
+            }
+        });
+    }
+
+    #[bench]
+    fn bench_after_conditions(ben: &mut Bencher) {
+        let (a, b) = (-3749999571i128, 3906250000i128);
+        ben.iter(|| {
+            let fc = PolynomialInQ::from(
+                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(a, b)]
+            );
+
+            let res = possible_periods_search(fc, 2);
+
+            assert!(res.is_none());
+        });
     }
 
     #[bench]

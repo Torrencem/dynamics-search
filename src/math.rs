@@ -22,7 +22,7 @@ pub fn mod_inverse<T: Integer + Copy>(num: T, prime: T) -> T {
     }
 }
 
-// TODO: Maybe use algorithm 4.79 from http://cacr.uwaterloo.ca/hac/about/chap4.pdf ?
+#[allow(unused)]
 pub fn multiplicative_order<T: Integer + Copy>(a: T, p: T) -> u32 {
     let mut res = 1;
     let mut curr = a;
@@ -33,6 +33,20 @@ pub fn multiplicative_order<T: Integer + Copy>(a: T, p: T) -> u32 {
         res += 1;
     }
     res
+}
+
+cached!{
+    COMPUTE;
+    fn c_multiplicative_order(a: i64, p: i64) -> u32 = {
+        let mut res = 1;
+        let mut curr = a;
+        while curr != 1 {
+            curr = curr * a;
+            curr = curr % p;
+            res += 1;
+        }
+        res
+    }
 }
 
 lazy_static! {

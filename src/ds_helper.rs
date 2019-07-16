@@ -70,7 +70,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
         let mut P = p_start;
         let mut hash_p = P as usize;
         // Unsafe is used for get_unchecked and get_unchecked_mut,
-        // which give a considerable performance boost over array
+        // which give a small performance boost over array
         // index checking
         unsafe {
             if point_table.get_unchecked(hash_p).1 == 0 {
@@ -95,7 +95,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
                         continue; // Exclude 0
                     }
                     // lrorder is both lorder and rorder from sage
-                    let lrorder = multiplicative_order(charpoly_constant, p);
+                    let lrorder = c_multiplicative_order(charpoly_constant, p);
                     
                     let r = lrorder as usize;
                     periods.insert(period * r);
