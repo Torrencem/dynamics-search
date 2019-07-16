@@ -35,20 +35,6 @@ pub fn multiplicative_order<T: Integer + Copy>(a: T, p: T) -> u32 {
     res
 }
 
-cached!{
-    COMPUTE;
-    fn c_multiplicative_order(a: i64, p: i64) -> u32 = {
-        let mut res = 1;
-        let mut curr = a;
-        while curr != 1 {
-            curr = curr * a;
-            curr = curr % p;
-            res += 1;
-        }
-        res
-    }
-}
-
 lazy_static! {
     static ref PRIMES: [bool; 101] = {
         let mut p = [false; 101];

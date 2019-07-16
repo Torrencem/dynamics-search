@@ -93,12 +93,12 @@ impl fmt::Display for Polynomial {
 }
 
 pub struct Rational {
-    pub numer: i128,
-    pub denom: i128,
+    pub numer: i64,
+    pub denom: i64,
 }
 
 impl Rational {
-    pub fn new(a: i128, b: i128) -> Rational {
+    pub fn new(a: i64, b: i64) -> Rational {
         Rational {numer: a, denom: b}
     }
 
@@ -122,7 +122,7 @@ impl PolynomialInQ {
 
     pub fn has_good_reduction(&self, p: usize) -> bool {
         for c in &self.coeffs {
-            if c.denom % (p as i128) == 0 {
+            if c.denom % (p as i64) == 0 {
                 return false;
             }
         }
@@ -131,7 +131,7 @@ impl PolynomialInQ {
 
     pub fn do_reduction(&self, p: usize) -> Polynomial {
         let coeffs = self.coeffs.iter().map(|c| {
-            ((c.numer % (p as i128)) as i64) * mod_inverse((c.denom % (p as i128)) as i64, p as i64) % (p as i64)
+            (c.numer % (p as i64)) * mod_inverse(c.denom % (p as i64), p as i64) % (p as i64)
         }).collect();
 
         Polynomial::new(coeffs, Some(p as i64))

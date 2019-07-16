@@ -95,7 +95,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
                         continue; // Exclude 0
                     }
                     // lrorder is both lorder and rorder from sage
-                    let lrorder = c_multiplicative_order(charpoly_constant, p);
+                    let lrorder = multiplicative_order(charpoly_constant, p);
                     
                     let r = lrorder as usize;
                     periods.insert(period * r);

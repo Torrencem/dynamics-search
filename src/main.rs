@@ -15,17 +15,12 @@ extern crate num_integer;
 extern crate rayon;
 extern crate test;
 #[macro_use] extern crate lazy_static;
-#[macro_use] extern crate cached;
 
 pub fn run_large_search() {
-    (-10_000_000_000..=10_000_000_000i128).into_par_iter().for_each(|a| {
-        for b in 1..=158i128 {
+    (-100_000_000..=100_000_000i64).into_par_iter().for_each(|a| {
+        for b in 1..=100i64 {
             let b = 2*b;
             let b = b*b*b*b;
-            // Did this come up in our old search?
-            if a.abs() < 1_000_000_000 && b < 1_000_000_000 {
-                continue;
-            }
             let flo:f32 = (a as f32) / (b as f32);
             if flo > -0.913942 {
                 continue;
@@ -75,12 +70,13 @@ fn main() {
 mod tests {
     use super::*;
     use test::Bencher;
+    use test::black_box;
 
     #[test]
     fn test_functionality() {
         let mut output = "".to_string();
-        (-100_000..=100_000i128).into_iter().for_each(|a| {
-            for b in 1..=60i128 {
+        (-100_000..=100_000i64).into_iter().for_each(|a| {
+            for b in 1..=60i64 {
                 let b = b*b;
                 // Analytic bound (should be above or below gcd?)
                 let flo:f32 = (a as f32) / (b as f32);
@@ -199,7 +195,7 @@ Manually check -29/16
 
     #[bench]
     fn bench_after_conditions(ben: &mut Bencher) {
-        let (a, b) = (-3749999571i128, 3906250000i128);
+        let (a, b) = (-3749999571i64, 3906250000i64);
         ben.iter(|| {
             let fc = PolynomialInQ::from(
                 vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(a, b)]
@@ -212,11 +208,27 @@ Manually check -29/16
     }
 
     #[bench]
+    fn bench_reduction(ben: &mut Bencher) {
+        let (a, b) = (-3749999571i64, 3906250000i64);
+        ben.iter(|| {
+            let fc = PolynomialInQ::from(
+                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(a, b)]
+            );
+
+            assert!(fc.has_good_reduction(3));
+
+            let fc_red = fc.do_reduction(3);
+
+            black_box(fc_red);
+        })
+    }
+
+    #[bench]
     fn bench_search_speed_test(b: &mut Bencher) {
         b.iter(|| {
             let mut output = "".to_string();
-            (-3_000..=3_000i128).into_iter().for_each(|a| {
-                for b in 1..=26i128 {
+            (-3_000..=3_000i64).into_iter().for_each(|a| {
+                for b in 1..=26i64 {
                     let b = b*b;
                     // Random Analytic bound (doesn't actually apply for z^2 case?)
                     let flo:f32 = (a as f32) / (b as f32);
