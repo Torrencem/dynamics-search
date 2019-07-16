@@ -7,7 +7,7 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     let mut res = HashSet::new();
     let mut first = true;
     for p in 2..=100 {
-        if small_prime(p) && f.has_good_reduction(p) {
+        if prime(p) && f.has_good_reduction(p) {
             if first {
                 res = fast_possible_periods(f.do_reduction(p));
                 first = false;
@@ -69,33 +69,39 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     for p_start in 0..p {
         let mut P = p_start;
         let mut hash_p = P as usize;
-        if point_table[hash_p].1 == 0 {
-            let startindex = index;
-            while point_table[hash_p].1 == 0 {
-                point_table[hash_p].1 = index;
-                let Q = f.eval(P);
-                let hash_q = Q as usize;
-                point_table[hash_p].0 = hash_q;
-                P = Q;
-                hash_p = hash_q;
-                index += 1;
-            }
-
-            if point_table[hash_p].1 >= startindex {
-                let period = index - point_table[hash_p].1;
-                periods.insert(period);
-                let l = f.multiplier(period, P);
-                let charpoly_constant = l;
-                if charpoly_constant == 0 {
-                    continue; // Exclude 0
+        // Unsafe is used for get_unchecked and get_unchecked_mut,
+        // which give a considerable performance boost over array
+        // index checking
+        unsafe {
+            if point_table.get_unchecked(hash_p).1 == 0 {
+                let startindex = index;
+                while point_table.get_unchecked(hash_p).1 == 0 {
+                    let mut pt_hash_p = point_table.get_unchecked_mut(hash_p);
+                    pt_hash_p.1 = index;
+                    let Q = f.eval(P);
+                    let hash_q = Q as usize;
+                    pt_hash_p.0 = hash_q;
+                    P = Q;
+                    hash_p = hash_q;
+                    index += 1;
                 }
-                // lrorder is both lorder and rorder from sage
-                let lrorder = multiplicative_order(charpoly_constant, p);
-                
-                let r = lrorder as usize;
-                periods.insert(period * r);
-                if p == 2 || p == 3 {
-                    periods.insert(period * r * (p as usize));
+
+                let pt_hash_p = point_table.get_unchecked(hash_p);
+                if pt_hash_p.1 >= startindex {
+                    let period = index - pt_hash_p.1;
+                    periods.insert(period);
+                    let charpoly_constant = f.multiplier(period, P);
+                    if charpoly_constant == 0 {
+                        continue; // Exclude 0
+                    }
+                    // lrorder is both lorder and rorder from sage
+                    let lrorder = multiplicative_order(charpoly_constant, p);
+                    
+                    let r = lrorder as usize;
+                    periods.insert(period * r);
+                    if p == 2 || p == 3 {
+                        periods.insert(period * r * (p as usize));
+                    }
                 }
             }
         }

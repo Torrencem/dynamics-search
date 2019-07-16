@@ -14,6 +14,7 @@ use num_integer::{Integer};
 extern crate num_integer;
 extern crate rayon;
 extern crate test;
+#[macro_use] extern crate lazy_static;
 
 pub fn run_large_search() {
     (-10_000_000_000..=10_000_000_000i128).into_par_iter().for_each(|a| {

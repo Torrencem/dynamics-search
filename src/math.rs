@@ -35,6 +35,21 @@ pub fn multiplicative_order<T: Integer + Copy>(a: T, p: T) -> u32 {
     res
 }
 
+lazy_static! {
+    static ref PRIMES: [bool; 101] = {
+        let mut p = [false; 101];
+        for i in 0..100 {
+            p[i] = small_prime(i);
+        }
+        p
+    };
+}
+
+#[inline]
+pub fn prime(n: usize) -> bool {
+    PRIMES[n]
+}
+
 pub fn small_prime(n: usize) -> bool {
     for x in 2..=(n as f32).sqrt().ceil() as usize {
         if n % x == 0 {
