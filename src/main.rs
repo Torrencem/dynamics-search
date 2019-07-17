@@ -19,10 +19,13 @@ extern crate test;
 #[macro_use] extern crate lazy_static;
 
 pub fn run_large_search() {
-    (-100_000_000..=100_000_000i64).into_par_iter().for_each(|a| {
-        for b in 1..=100i64 {
+    (-100_000_000_000..=100_000_000_000i64).into_par_iter().for_each(|a| {
+        for b in 1..=281i64 {
             let b = 2*b;
             let b = b*b*b*b;
+            if a <= 10_000_000_000 && b <= 10_000_000_000 {
+                continue;
+            }
             let flo:f32 = (a as f32) / (b as f32);
             if flo > -0.913942 {
                 continue;
