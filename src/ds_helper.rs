@@ -37,6 +37,54 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     Some(res)
 }
 
+pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<HashSet<usize>> {
+    let mut res = HashSet::new();
+    let mut first = true;
+    for p in 2..=300 {
+        if prime(p as usize) && has_qw_homomorphism(p) {
+            if first {
+                let (red1, red2) = f.reductions(p);
+                match (red1, red2) {
+                    (None, None) => continue,
+                    (Some(r1), None) => res = fast_possible_periods(r1),
+                    (None, Some(r2)) => res = fast_possible_periods(r2),
+                    (Some(r1), Some(r2)) => {
+                        res = fast_possible_periods(r1);
+                        res = res.intersection(&fast_possible_periods(r2)).map(|&x| x).collect();
+                    }
+                }
+                first = false;
+            } else {
+                let (red1, red2) = f.reductions(p);
+                if let Some(r1) = red1 {
+                    res = res.intersection(&fast_possible_periods(r1)).map(|&x| x).collect();
+                }
+                if let Some(r2) = red2 {
+                    res = res.intersection(&fast_possible_periods(r2)).map(|&x| x).collect();
+                }
+                // Check if our set contains anything
+                // large enough to be interesting
+                let mut found = false;
+                for possible in &res {
+                    if *possible > goal {
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    return None;
+                }
+            }
+        }
+    }
+
+    // Remove everything not in the goal
+    let not_interesting: HashSet<_> = (0..=goal).collect();
+    res = res.difference(&not_interesting).map(|&x| x).collect();
+
+    Some(res)
+}
+
 #[allow(unused)]
 pub fn possible_periods(f: PolynomialInQ, prime_bound: usize) -> HashSet<usize> {
     let mut res = HashSet::new();
@@ -108,4 +156,20 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     }
 
     periods
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reduction_example() {
+        let num = EisensteinInteger::new(-8, 5);
+        let den = EisensteinInteger::new(6, 7);
+        let nd = QwElement::new(num, den);
+
+        assert_eq!(nd.reductions(7), (Some(2), Some(5)));
+
+        println!("{:?}", num.gcd(&den));
+    }
 }

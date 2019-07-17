@@ -2,6 +2,8 @@ use std::fmt;
 
 use crate::math::*;
 
+use num_rational::Rational64;
+
 #[derive(Debug)]
 pub struct Polynomial {
     pub coeffs: Vec<i64>,
@@ -135,5 +137,229 @@ impl PolynomialInQ {
         }).collect();
 
         Polynomial::new(coeffs, Some(p as i64))
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct EisensteinInteger {
+    a: i64,
+    b: i64
+}
+
+impl EisensteinInteger {
+    pub fn new(a: i64, b: i64) -> EisensteinInteger {
+        EisensteinInteger {a, b}
+    }
+
+    // Evaluate the natural homomorphisms from Z[w]
+    // to F_p sending 1 to 1 and w to sqrt(-3) in F_p
+    pub fn reductions(&self, p: i64) -> (i64, i64) {
+        debug_assert!(p > 2);
+        let d2 = mod_inverse(2, p);
+        let (s1, s2) = cipolla(p - 3, p).unwrap();
+        let (w1, w2) = ((-1 + s1)*d2, (-1 + s2)*d2);
+        ((self.a + w1 * self.b).rem_euclid(p), (self.a + w2 * self.b).rem_euclid(p))
+    }
+
+    pub fn one() -> EisensteinInteger {
+        EisensteinInteger {a:1, b:0}
+    }
+
+    pub fn zero() -> EisensteinInteger {
+        EisensteinInteger {a:0, b:0}
+    }
+
+    pub fn is_unit(&self) -> bool {
+        if self.a.abs() == 1 && self.b == 0 {
+            true
+        } else if self.b.abs() == 1 && self.a == 0 {
+            true
+        } else if self.a == -1 && self.b == -1 {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.a == 0 && self.b == 0
+    }
+
+    pub fn product(&self, other: EisensteinInteger) -> EisensteinInteger {
+        EisensteinInteger { a: self.a * other.a - self.b * other.b, b: self.a * other.b + self.b * other.a - self.b * other.b }
+    }
+
+    pub fn conjugate(&self) -> EisensteinInteger {
+        EisensteinInteger { a: self.a - self.b, b: -self.b }
+    }
+
+    // Returns |x|^2 in C
+    pub fn norm_sq(&self) -> i64 {
+        self.a * self.a - self.a * self.b + self.b * self.b
+    }
+
+    pub fn difference(&self, other: &EisensteinInteger) -> EisensteinInteger {
+        EisensteinInteger {a: self.a - other.a, b: self.b - other.b}
+    }
+
+    pub fn division(&self, other: &EisensteinInteger) -> EisensteinInteger {
+        // alpha / beta = 1/(|beta|^2)alpha beta_conjugate
+        // in complex absolute value
+        let num = self.product(other.conjugate());
+        let normsq = other.norm_sq();
+        let a = Rational64::new(num.a, normsq);
+        let b = Rational64::new(num.b, normsq);
+        // Round a and b to the nearest integer
+        let a = a.round().to_integer();
+        let b = b.round().to_integer();
+        EisensteinInteger { a, b }
+    }
+
+    pub fn gcd(&self, other: &EisensteinInteger) -> EisensteinInteger {
+        if self.norm_sq() < other.norm_sq() {
+            return other.gcd(self);
+        }
+        assert!(!other.is_zero());
+        let q = self.division(other);
+        let remainder = self.difference(&other.product(q));
+        if remainder.is_zero() {
+            *other
+        } else {
+            other.gcd(&remainder)
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct QwElement {
+    numer: EisensteinInteger,
+    denom: EisensteinInteger
+}
+
+impl QwElement {
+    pub fn new(numer: EisensteinInteger, denom: EisensteinInteger) -> QwElement {
+        QwElement { numer, denom }
+    }
+    // Evaluate the natural homomorphisms from Z[w]
+    // to F_p sending 1 to 1 and w to sqrt(-3) in F_p
+    // Returns None if either choice has bad reduction
+    pub fn reductions(&self, p: i64) -> (Option<i64>, Option<i64>) {
+        let (a1, a2) = self.numer.reductions(p);
+        let (b1, b2) = self.denom.reductions(p);
+
+        let r1 = {
+            if b1 == 0 {
+                None
+            } else {
+                Some((a1 * mod_inverse(b1, p)).rem_euclid(p))
+            }
+        };
+
+        let r2 = {
+            if b2 == 0 {
+                None
+            } else {
+                Some((a2 * mod_inverse(b2, p)).rem_euclid(p))
+            }
+        };
+
+        (r1, r2)
+    }
+
+    pub fn one() -> QwElement {
+        QwElement::new(EisensteinInteger::one(), EisensteinInteger::one())
+    }
+
+    pub fn zero() -> QwElement {
+        QwElement::new(EisensteinInteger::zero(), EisensteinInteger::one())
+    }
+}
+
+pub struct PolynomialInQw {
+    pub coeffs: Vec<QwElement>,
+}
+
+impl PolynomialInQw {
+    pub fn from(coeffs: Vec<QwElement>) -> PolynomialInQw {
+        PolynomialInQw {coeffs}
+    }
+    // pub fn has_good_reductions(&self, p: i64) -> (bool, bool) {
+    //     let mut res = (true, true);
+    //     for c in &self.coeffs {
+    //         let red = c.reductions(p);
+    //         res = (res.0 && !red.0.is_none(),
+    //                res.1 && !red.1.is_none());
+    //         if res == (false, false) {
+    //             break;
+    //         }
+    //     }
+    //     res
+    // }
+
+    pub fn reductions(&self, p: i64) -> (Option<Polynomial>, Option<Polynomial>) {
+        let mut p1 = Vec::with_capacity(self.coeffs.len());
+        let mut p2 = Vec::with_capacity(self.coeffs.len());
+
+        let mut has_p1 = true;
+        let mut has_p2 = true;
+
+        for c in &self.coeffs {
+            let (red1, red2) = c.reductions(p);
+            if has_p1 {
+                match red1 {
+                    None => {
+                        has_p1 = false;
+                        continue
+                    },
+                    Some(red1) => {
+                        p1.push(red1);
+                    }
+                }
+            }
+            if has_p2 {
+                match red2 {
+                    None => {
+                        has_p2 = false;
+                        continue
+                    },
+                    Some(red2) => {
+                        p2.push(red2);
+                    }
+                }
+            }
+            if !(has_p1 || has_p2) {
+                break;
+            }
+        }
+
+        let p1 = {
+            if !has_p1 {
+                None
+            } else {
+                Some(Polynomial::new(p1, Some(p)))
+            }
+        };
+
+        let p2 = {
+            if !has_p2 {
+                None
+            } else {
+                Some(Polynomial::new(p2, Some(p)))
+            }
+        };
+
+        (p1, p2)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn another_example() {
+        let a = EisensteinInteger::new(2, 3);
+        let b = EisensteinInteger::new(0, 1);
+        println!("{:?}", a.division(&b));
     }
 }

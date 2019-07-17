@@ -10,8 +10,10 @@ use ds_helper::*;
 use rayon::prelude::*;
 
 use num_integer::{Integer};
+use num_rational::Ratio;
 
 extern crate num_integer;
+extern crate num_rational;
 extern crate rayon;
 extern crate test;
 #[macro_use] extern crate lazy_static;
@@ -266,5 +268,46 @@ Manually check -29/16
             println!("\n\n{}\n\n{}",output, correct_output);
             assert!(correct_output == output);
         })
+    }
+
+    #[test]
+    fn test_basic_qw() {
+        let c = QwElement::new(EisensteinInteger::new(0, 0), EisensteinInteger::one());
+        let f = PolynomialInQw::from(
+            vec![QwElement::one(), QwElement::zero(), QwElement::zero(), c]
+        );
+
+        println!("{:?}", possible_periods_search_qw(f, 1));
+    }
+
+    #[test]
+    fn qw_search() {
+        for num_a in -100..=100 {
+            println!("{:?}", num_a);
+            for num_b in -100..=100 {
+                for denom_a in 1..=8 {
+                    for denom_b in 1..=8 {
+                        let denom = EisensteinInteger::new(denom_a, denom_b);
+                        let denom = denom.product(denom.product(denom));
+                        let numer = EisensteinInteger::new(num_a, num_b);
+                        if denom.is_zero() || numer.is_zero() {
+                            continue;
+                        }
+                        if !numer.gcd(&denom).is_unit() {
+                            continue;
+                        }
+                        let c = QwElement::new(numer, denom);
+
+                        let f = PolynomialInQw::from(
+                            vec![QwElement::one(), QwElement::zero(), QwElement::zero(), c]
+                        );
+
+                        if let Some(set) = possible_periods_search_qw(f, 1) {
+                            println!("{:?} / {:?}, {:?}", numer, denom, set);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
