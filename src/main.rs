@@ -46,28 +46,10 @@ pub fn search_z4_opt(height_max: i64, height_min: i64) {
             if g != 1 && g != -1 {
                 continue;
             }
-            // Check for 2 mod 3 or 4 mod 5 cases
-            // Does a/b have reduction mod 3?
-            if b % 3 != 0 {
-                // is a/b = 2 mod 3?
-                if (a * mod_inverse(b % 3, 3)).rem_euclid(3) == 2 {
-                    continue;
-                }
-            }
-            // Does a/b have reduction mod 5?
-            if b % 5 != 0 {
-                // is a/b = 4 mod 5?
-                if (a * mod_inverse(b % 5, 5)).rem_euclid(5) == 4 {
-                    continue;
-                }
-            }
+            
             let c = Rational::new(a, b);
-            // Create z^4 + c from it's coefficients (1, 0, 0, 0, a/b)
-            let fc = PolynomialInQ::from(
-                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), c]
-            );
 
-            let res = possible_periods_search(fc, 2);
+            let res = z4c_possible_periods_search(c, 2);
 
             if let Some(possibilities) = res {
                 println!("{}", format_search_result(c, possibilities));
@@ -172,8 +154,6 @@ mod tests {
     use super::*;
     use test::Bencher;
     use test::black_box;
-
-    use std::collections::HashSet;
 
     #[test]
     fn test_functionality() {

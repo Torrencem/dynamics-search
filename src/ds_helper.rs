@@ -3,6 +3,9 @@ use crate::util::*;
 use std::collections::{HashSet, HashMap};
 use crate::math::*;
 
+// In general: for a polynomial in Q, find the possible periods
+// greater than goal
+#[allow(unused)]
 pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<usize>> {
     let mut res = HashSet::new();
     let mut first = true;
@@ -37,6 +40,8 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     Some(res)
 }
 
+// Find the possible periods of a polynomial
+// in Q(w)
 pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<HashSet<usize>> {
     let mut res = HashSet::new();
     let mut first = true;
@@ -85,25 +90,6 @@ pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<Hash
     Some(res)
 }
 
-#[allow(unused)]
-pub fn possible_periods(f: PolynomialInQ, prime_bound: usize) -> HashSet<usize> {
-    let mut res = HashSet::new();
-    let mut first = true;
-    for p in 2..=prime_bound {
-        if small_prime(p) && f.has_good_reduction(p) {
-            if first {
-                res = fast_possible_periods(f.do_reduction(p));
-                first = false;
-            } else {
-                let pers = fast_possible_periods(f.do_reduction(p));
-                res = res.intersection(&pers).map(|&x| x).collect();
-            }
-        }
-    }
-
-    res
-}
-
 pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     let p = f.p_mod.unwrap();
 
@@ -117,39 +103,32 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     for p_start in 0..p {
         let mut P = p_start;
         let mut hash_p = P as usize;
-        // Unsafe is used for get_unchecked and get_unchecked_mut,
-        // which give a small performance boost over array
-        // index checking
-        unsafe {
-            if point_table.get_unchecked(hash_p).1 == 0 {
-                let startindex = index;
-                while point_table.get_unchecked(hash_p).1 == 0 {
-                    let mut pt_hash_p = point_table.get_unchecked_mut(hash_p);
-                    pt_hash_p.1 = index;
-                    let Q = f.eval(P);
-                    let hash_q = Q as usize;
-                    pt_hash_p.0 = hash_q;
-                    P = Q;
-                    hash_p = hash_q;
-                    index += 1;
-                }
+        if point_table[hash_p].1 == 0 {
+            let startindex = index;
+            while point_table[hash_p].1 == 0 {
+                point_table[hash_p].1 = index;
+                let Q = f.eval(P);
+                let hash_q = Q as usize;
+                point_table[hash_p].0 = hash_q;
+                P = Q;
+                hash_p = hash_q;
+                index += 1;
+            }
 
-                let pt_hash_p = point_table.get_unchecked(hash_p);
-                if pt_hash_p.1 >= startindex {
-                    let period = index - pt_hash_p.1;
-                    periods.insert(period);
-                    let charpoly_constant = f.multiplier(period, P);
-                    if charpoly_constant == 0 {
-                        continue; // Exclude 0
-                    }
-                    // lrorder is both lorder and rorder from sage
-                    let lrorder = multiplicative_order(charpoly_constant, p);
-                    
-                    let r = lrorder as usize;
-                    periods.insert(period * r);
-                    if p == 2 || p == 3 {
-                        periods.insert(period * r * (p as usize));
-                    }
+            if point_table[hash_p].1 >= startindex {
+                let period = index - point_table[hash_p].1;
+                periods.insert(period);
+                let charpoly_constant = f.multiplier(period, P);
+                if charpoly_constant == 0 {
+                    continue; // Exclude 0
+                }
+                // lrorder is both lorder and rorder from sage
+                let lrorder = multiplicative_order(charpoly_constant, p);
+                
+                let r = lrorder as usize;
+                periods.insert(period * r);
+                if p == 2 || p == 3 {
+                    periods.insert(period * r * (p as usize));
                 }
             }
         }
@@ -164,10 +143,10 @@ pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<u
     for p in 2..=100 {
         if prime(p) && c.denom % p as i64 != 0 {
             if first {
-                res = faster_possible_periods(p, c.reduce(p)).clone();
+                res = z4_table_possible_periods(p, c.reduce(p)).clone();
                 first = false;
             } else {
-                let pers = faster_possible_periods(p, c.reduce(p));
+                let pers = z4_table_possible_periods(p, c.reduce(p));
                 res = res.intersection(&pers).map(|&x| x).collect();
             }
             // Check if our set contains anything
@@ -192,14 +171,14 @@ pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<u
     Some(res.clone())
 }
 
-pub fn faster_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> {
-    POSPER_TABLE.get(&p).unwrap().get(&c).unwrap()
+pub fn z4_table_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> {
+    Z4_TABLE.get(&p).unwrap().get(&c).unwrap()
 }
 
 lazy_static! {
-    static ref POSPER_TABLE: HashMap<usize, HashMap<usize, HashSet<usize>>> = {
+    static ref Z4_TABLE: HashMap<usize, HashMap<usize, HashSet<usize>>> = {
         let mut res = HashMap::new();
-        for p in 2..=150 {
+        for p in 2..=100 {
             if !prime(p) {
                 continue;
             }
