@@ -1,6 +1,6 @@
 
 use crate::util::*;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashSet, BTreeMap};
 use crate::math::*;
 
 // In general: for a polynomial in Q, find the possible periods
@@ -176,13 +176,13 @@ pub fn z4_table_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> 
 }
 
 lazy_static! {
-    static ref Z4_TABLE: HashMap<usize, HashMap<usize, HashSet<usize>>> = {
-        let mut res = HashMap::new();
+    static ref Z4_TABLE: BTreeMap<usize, BTreeMap<usize, HashSet<usize>>> = {
+        let mut res = BTreeMap::new();
         for p in 2..=100 {
             if !prime(p) {
                 continue;
             }
-            let mut at_p = HashMap::new();
+            let mut at_p = BTreeMap::new();
             for c in 0..p {
                 let fc = Polynomial::new(
                     vec![1, 0, 0, 0, c as i64], Some(p as i64)

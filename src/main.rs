@@ -31,8 +31,9 @@ pub fn format_search_result<T: fmt::Display, V: fmt::Debug>(ch: T, set: V) -> St
 // (uses z^4 + c, with appropriate optimizations)
 pub fn search_z4_opt(height_max: i64, height_min: i64) {
     let bmin = ((height_max as f32).sqrt().sqrt() / 2.0).floor() as i64;
-    (-height_max..=height_max).into_par_iter().for_each(|a| {
-        for b in 1..=bmin {
+    (1..=bmin).into_par_iter().for_each(|b| {
+        println!("{}", b);
+        for a in -height_max..=height_max {
             let b = 2*b;
             let b = b*b*b*b;
             if a <= height_min && b <= height_min {
