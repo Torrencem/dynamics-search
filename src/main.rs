@@ -92,6 +92,7 @@ pub fn search_z3_opt(height_max: i64, _height_min: i64) {
         });
 }
 
+// Setup the command line interface
 fn main() {
     let hmax_arg = Arg::with_name("height_max")
                         .short("hmax")
