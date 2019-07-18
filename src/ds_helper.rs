@@ -1,6 +1,6 @@
 
 use crate::util::*;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use crate::math::*;
 
 pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<usize>> {
@@ -156,6 +156,65 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     }
 
     periods
+}
+
+pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<usize>> {
+    let mut res = HashSet::new();
+    let mut first = true;
+    for p in 2..=100 {
+        if prime(p) && c.denom % p as i64 != 0 {
+            if first {
+                res = faster_possible_periods(p, c.reduce(p)).clone();
+                first = false;
+            } else {
+                let pers = faster_possible_periods(p, c.reduce(p));
+                res = res.intersection(&pers).map(|&x| x).collect();
+            }
+            // Check if our set contains anything
+            // large enough to be interesting
+            let mut found = false;
+            for possible in &res {
+                if *possible > goal {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                return None;
+            }
+        }
+    }
+
+    // Remove everything not in the goal
+    let not_interesting: HashSet<_> = (0..=goal).collect();
+    res = res.difference(&not_interesting).map(|&x| x).collect();
+
+    Some(res.clone())
+}
+
+pub fn faster_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> {
+    POSPER_TABLE.get(&p).unwrap().get(&c).unwrap()
+}
+
+lazy_static! {
+    static ref POSPER_TABLE: HashMap<usize, HashMap<usize, HashSet<usize>>> = {
+        let mut res = HashMap::new();
+        for p in 2..=150 {
+            if !prime(p) {
+                continue;
+            }
+            let mut at_p = HashMap::new();
+            for c in 0..p {
+                let fc = Polynomial::new(
+                    vec![1, 0, 0, 0, c as i64], Some(p as i64)
+                );
+                let res = fast_possible_periods(fc);
+                at_p.insert(c, res);
+            }
+            res.insert(p, at_p);
+        }
+        res
+    };
 }
 
 #[cfg(test)]

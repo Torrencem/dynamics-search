@@ -3,6 +3,7 @@ use std::fmt;
 use crate::math::*;
 
 use num_rational::Rational64;
+use num_complex::Complex32;
 
 #[derive(Debug)]
 pub struct Polynomial {
@@ -89,11 +90,28 @@ impl Polynomial {
 
 impl fmt::Display for Polynomial {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s: String = self.coeffs.clone().into_iter().map(|x| x.to_string() + " ").collect();
-        write!(f, "{}", s.trim())
+        let mut exp = self.coeffs.len() - 1;
+        let mut first = false;
+        for c in &self.coeffs {
+            if first {
+                write!(f, "{}x^{}", c, exp)?;
+                first = false;
+            } else {
+                if exp == 0 {
+                    write!(f, " + {}", c)?;
+                } else if exp == 1 {
+                    write!(f, " + {}x", c)?;
+                } else {
+                    write!(f, " + {}x^{}", c, exp)?;
+                }
+            }
+            exp -= 1;
+        }
+        Ok(())
     }
 }
 
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Rational {
     pub numer: i64,
     pub denom: i64,
@@ -110,6 +128,20 @@ impl Rational {
 
     pub fn one() -> Rational {
         Rational {numer: 1, denom: 1}
+    }
+
+    pub fn reduce(&self, p: usize) -> usize {
+        ((self.numer % (p as i64)) * mod_inverse(self.denom % (p as i64), p as i64)).rem_euclid(p as i64) as usize
+    }
+}
+
+impl fmt::Display for Rational {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.denom == 1 {
+            write!(f, "{}", self.numer)
+        } else {
+            write!(f, "{}/{}", self.numer, self.denom)
+        }
     }
 }
 
@@ -140,7 +172,30 @@ impl PolynomialInQ {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+impl fmt::Display for PolynomialInQ {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut exp = self.coeffs.len() - 1;
+        let mut first = false;
+        for c in &self.coeffs {
+            if first {
+                write!(f, "{}x^{}", c, exp)?;
+                first = false;
+            } else {
+                if exp == 0 {
+                    write!(f, " + {}", c)?;
+                } else if exp == 1 {
+                    write!(f, " + {}x", c)?;
+                } else {
+                    write!(f, " + {}x^{}", c, exp)?;
+                }
+            }
+            exp -= 1;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct EisensteinInteger {
     a: i64,
     b: i64
@@ -228,9 +283,25 @@ impl EisensteinInteger {
             other.gcd(&remainder)
         }
     }
+
+    pub fn approx_coords(&self) -> Complex32 {
+        Complex32::new(self.a as f32, (self.b as f32) * (3.0f32).sqrt())
+    }
 }
 
-#[derive(Debug, Copy, Clone)]
+impl fmt::Display for EisensteinInteger {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.b == 0 {
+            write!(f, "{}", self.a)
+        } else if self.a == 0 {
+            write!(f, "{}*w", self.b)
+        } else {
+            write!(f, "{} + {}*w", self.a, self.b)
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct QwElement {
     numer: EisensteinInteger,
     denom: EisensteinInteger
@@ -273,6 +344,24 @@ impl QwElement {
     pub fn zero() -> QwElement {
         QwElement::new(EisensteinInteger::zero(), EisensteinInteger::one())
     }
+    
+    pub fn approx_coords(&self) -> Complex32 {
+        self.numer.approx_coords() / self.denom.approx_coords()
+    }
+}
+
+impl fmt::Display for QwElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.denom == EisensteinInteger::one() {
+            write!(f, "{}", self.numer)
+        } else if self.numer == EisensteinInteger::zero() {
+            write!(f, "0")
+        } else if self.numer.b == 0 {
+            write!(f, "{}/({})", self.numer, self.denom)
+        } else {
+            write!(f, "({})/({})", self.numer, self.denom)
+        }
+    }
 }
 
 pub struct PolynomialInQw {
@@ -283,18 +372,6 @@ impl PolynomialInQw {
     pub fn from(coeffs: Vec<QwElement>) -> PolynomialInQw {
         PolynomialInQw {coeffs}
     }
-    // pub fn has_good_reductions(&self, p: i64) -> (bool, bool) {
-    //     let mut res = (true, true);
-    //     for c in &self.coeffs {
-    //         let red = c.reductions(p);
-    //         res = (res.0 && !red.0.is_none(),
-    //                res.1 && !red.1.is_none());
-    //         if res == (false, false) {
-    //             break;
-    //         }
-    //     }
-    //     res
-    // }
 
     pub fn reductions(&self, p: i64) -> (Option<Polynomial>, Option<Polynomial>) {
         let mut p1 = Vec::with_capacity(self.coeffs.len());
@@ -349,6 +426,29 @@ impl PolynomialInQw {
         };
 
         (p1, p2)
+    }
+}
+
+impl fmt::Display for PolynomialInQw {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut exp = self.coeffs.len() - 1;
+        let mut first = false;
+        for c in &self.coeffs {
+            if first {
+                write!(f, "{}x^{}", c, exp)?;
+                first = false;
+            } else {
+                if exp == 0 {
+                    write!(f, " + {}", c)?;
+                } else if exp == 1 {
+                    write!(f, " + {}x", c)?;
+                } else {
+                    write!(f, " + {}x^{}", c, exp)?;
+                }
+            }
+            exp -= 1;
+        }
+        Ok(())
     }
 }
 
