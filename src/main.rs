@@ -74,11 +74,11 @@ pub fn search_z3_opt(height_max: i64, _height_min: i64) {
                             continue;
                         }
                         let denom = denom1.product(denom1.product(denom1));
-                        let numer = EisensteinInteger::new(num_a, num_b);
-                        let c = QwElement::new(numer, denom);
-                        if c.phase_angle() > (PI / 6.0) {
+                        if denom.phase_angle() >= (PI / 6.0) {
                             continue;
                         }
+                        let numer = EisensteinInteger::new(num_a, num_b);
+                        let c = QwElement::new(numer, denom);
                         if denom.is_zero() || numer.is_zero() {
                             continue;
                         }
@@ -86,7 +86,7 @@ pub fn search_z3_opt(height_max: i64, _height_min: i64) {
                             continue;
                         }
 
-                        if let Some(set) = z3c_possible_periods_search(c, 1) {
+                        if let Some(set) = z3c_possible_periods_search(c, 2) {
                             println!("{}", format_search_result(c, set));
                         }
                     }
