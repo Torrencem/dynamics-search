@@ -1,6 +1,7 @@
 
 use crate::util::*;
 use std::collections::{HashSet, BTreeMap};
+use arrayvec::ArrayVec;
 use crate::math::*;
 
 // In general: for a polynomial in Q, find the possible periods
@@ -172,25 +173,26 @@ pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<u
 }
 
 pub fn z4_table_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> {
-    Z4_TABLE.get(&p).unwrap().get(&c).unwrap()
+    &Z4_TABLE[p - 2][c]
 }
 
 lazy_static! {
-    static ref Z4_TABLE: BTreeMap<usize, BTreeMap<usize, HashSet<usize>>> = {
-        let mut res = BTreeMap::new();
+    static ref Z4_TABLE: ArrayVec<[ArrayVec<[HashSet<usize>; 100]>; 100]> = {
+        let mut res = ArrayVec::<[ArrayVec<[HashSet<usize>; 100]>; 100]>::new();
         for p in 2..=100 {
+            let mut interm = ArrayVec::<[HashSet<usize>; 100]>::new();
             if !prime(p) {
+                res.push(interm);
                 continue;
             }
-            let mut at_p = BTreeMap::new();
             for c in 0..p {
                 let fc = Polynomial::new(
                     vec![1, 0, 0, 0, c as i64], Some(p as i64)
                 );
-                let res = fast_possible_periods(fc);
-                at_p.insert(c, res);
+                let res2 = fast_possible_periods(fc);
+                interm.push(res2);
             }
-            res.insert(p, at_p);
+            res.push(interm);
         }
         res
     };

@@ -19,6 +19,7 @@ extern crate num_integer;
 extern crate num_rational;
 extern crate rayon;
 extern crate test;
+extern crate arrayvec;
 #[macro_use] extern crate lazy_static;
 extern crate clap;
 use clap::{Arg, App, SubCommand};
