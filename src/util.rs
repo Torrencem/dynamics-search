@@ -5,6 +5,8 @@ use crate::math::*;
 use num_rational::Rational64;
 use num_complex::Complex32;
 
+use std::f32::consts::PI;
+
 #[derive(Debug)]
 pub struct Polynomial {
     pub coeffs: Vec<i64>,
@@ -285,7 +287,20 @@ impl EisensteinInteger {
     }
 
     pub fn approx_coords(&self) -> Complex32 {
-        Complex32::new(self.a as f32, (self.b as f32) * (3.0f32).sqrt())
+        let a = self.a as f32;
+        let b = self.b as f32;
+        Complex32::new(a - (b/2.0), b * (3.0f32).sqrt() / 2.0)
+    }
+
+    pub fn phase_angle(&self) -> f32 {
+        let raw = self.approx_coords().to_polar().1;
+        if raw < 0.0 {
+            raw + 2.0*PI
+        } else if raw >= 2.0*PI {
+            raw - 2.0*PI
+        } else {
+            raw
+        }
     }
 }
 
@@ -347,6 +362,17 @@ impl QwElement {
     
     pub fn approx_coords(&self) -> Complex32 {
         self.numer.approx_coords() / self.denom.approx_coords()
+    }
+
+    pub fn phase_angle(&self) -> f32 {
+        let raw = self.approx_coords().to_polar().1;
+        if raw < 0.0 {
+            raw + 2.0*PI
+        } else if raw > 2.0*PI {
+            raw - 2.0*PI
+        } else {
+            raw
+        }
     }
 }
 

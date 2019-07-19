@@ -69,11 +69,14 @@ pub fn search_z3_opt(height_max: i64, _height_min: i64) {
             for num_b in -height_max..=height_max {
                 for denom_a in -bmax..=bmax {
                     for denom_b in -bmax..=bmax {
-                        let denom = EisensteinInteger::new(denom_a, denom_b);
-                        let denom = denom.product(denom.product(denom));
+                        let denom1 = EisensteinInteger::new(denom_a, denom_b);
+                        if denom1.phase_angle() >= (2.0*PI / 3.0) {
+                            continue;
+                        }
+                        let denom = denom1.product(denom1.product(denom1));
                         let numer = EisensteinInteger::new(num_a, num_b);
                         let c = QwElement::new(numer, denom);
-                        if c.approx_coords().to_polar().1 > (PI / 6.0) {
+                        if c.phase_angle() > (PI / 6.0) {
                             continue;
                         }
                         if denom.is_zero() || numer.is_zero() {
