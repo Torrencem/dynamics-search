@@ -22,6 +22,7 @@ extern crate test;
 extern crate arrayvec;
 #[macro_use] extern crate lazy_static;
 extern crate clap;
+extern crate fnv;
 use clap::{Arg, App, SubCommand};
 
 pub fn format_search_result<T: fmt::Display, V: fmt::Debug>(ch: T, set: V) -> String {
@@ -226,25 +227,29 @@ Manually check -29/16
     }
 
     #[bench]
-    fn bench_large_example(b: &mut Bencher) {
+    fn bench_faster_conditions(b: &mut Bencher) {
         b.iter(|| {
-            let fc = PolynomialInQ::from(
-                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(-5649488755,639128961)]
-            );
+            let a = -5649488755i64;
+            let b = 639128961i64;
+            let flo:f32 = (a as f32) / (b as f32);
+            if flo > -0.913942 {
+                panic!();
+            }
+            let g = a.gcd(&b);
+            if g != 1 && g != -1 {
+                panic!();
+            }
+            black_box(g);
 
-            let res = possible_periods_search(fc, 1);
-
-            assert!(res.unwrap().contains(&2));
-
-            // Wrong example
-
-            let fc = PolynomialInQ::from(                                                                  //       v--- notice the 4
-                vec![Rational::one(), Rational::zero(), Rational::zero(), Rational::zero(), Rational::new(-5649488754,639128961)]
-            );
-
-            let res = possible_periods_search(fc, 1);
-
-            assert!(res.is_none());
+            let a = -5649488753i64;
+            if flo > -0.913942 {
+                panic!();
+            }
+            let g = a.gcd(&b);
+            if g != 1 && g != -1 {
+                panic!();
+            }
+            g
         })
     }
 
@@ -257,7 +262,7 @@ Manually check -29/16
             assert!(!res.is_none());
             assert!(res.unwrap().contains(&2));
 
-            let res = z4c_possible_periods_search(Rational::new(-5649488754,639128961), 1);
+            let res = z4c_possible_periods_search(Rational::new(-5649488753,639128961), 1);
 
             assert!(res.is_none());
         })

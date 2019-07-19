@@ -1,14 +1,18 @@
 
 use crate::util::*;
 use std::collections::{HashSet, BTreeMap};
+use std::hash::BuildHasherDefault;
+use fnv::FnvHasher;
 use arrayvec::ArrayVec;
 use crate::math::*;
+
+type FNVHashSet = HashSet<usize, BuildHasherDefault<FnvHasher>>;
 
 // In general: for a polynomial in Q, find the possible periods
 // greater than goal
 #[allow(unused)]
-pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<usize>> {
-    let mut res = HashSet::new();
+pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<FNVHashSet> {
+    let mut res = FNVHashSet::default();
     let mut first = true;
     for p in 2..=100 {
         if prime(p) && f.has_good_reduction(p) {
@@ -35,7 +39,7 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
     }
 
     // Remove everything not in the goal
-    let not_interesting: HashSet<_> = (0..=goal).collect();
+    let not_interesting: FNVHashSet = (0..=goal).collect();
     res = res.difference(&not_interesting).map(|&x| x).collect();
 
     Some(res)
@@ -43,8 +47,8 @@ pub fn possible_periods_search(f: PolynomialInQ, goal: usize) -> Option<HashSet<
 
 // Find the possible periods of a polynomial
 // in Q(w)
-pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<HashSet<usize>> {
-    let mut res = HashSet::new();
+pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<FNVHashSet> {
+    let mut res = FNVHashSet::default();
     let mut first = true;
     for p in 2..=300 {
         if prime(p as usize) && has_qw_homomorphism(p) {
@@ -85,13 +89,13 @@ pub fn possible_periods_search_qw(f: PolynomialInQw, goal: usize) -> Option<Hash
     }
 
     // Remove everything not in the goal
-    let not_interesting: HashSet<_> = (0..=goal).collect();
+    let not_interesting: FNVHashSet = (0..=goal).collect();
     res = res.difference(&not_interesting).map(|&x| x).collect();
 
     Some(res)
 }
 
-pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
+pub fn fast_possible_periods(f: Polynomial) -> FNVHashSet {
     let p = f.p_mod.unwrap();
 
     // We don't need the point at infinity, so we
@@ -99,7 +103,7 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     //    (also, this way, hash_point = id)
     let mut point_table = vec![(0, 0); p as usize];
     let mut index = 1;
-    let mut periods = HashSet::new();
+    let mut periods = FNVHashSet::default();
 
     for p_start in 0..p {
         let mut P = p_start;
@@ -138,8 +142,8 @@ pub fn fast_possible_periods(f: Polynomial) -> HashSet<usize> {
     periods
 }
 
-pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<usize>> {
-    let mut res = HashSet::new();
+pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<FNVHashSet> {
+    let mut res = FNVHashSet::default();
     let mut first = true;
     for p in 2..=100 {
         if prime(p) && c.denom % p as i64 != 0 {
@@ -166,21 +170,21 @@ pub fn z4c_possible_periods_search(c: Rational, goal: usize) -> Option<HashSet<u
     }
 
     // Remove everything not in the goal
-    let not_interesting: HashSet<_> = (0..=goal).collect();
+    let not_interesting: FNVHashSet = (0..=goal).collect();
     res = res.difference(&not_interesting).map(|&x| x).collect();
 
     Some(res.clone())
 }
 
-pub fn z4_table_possible_periods(p: usize, c: usize) -> &'static HashSet<usize> {
+pub fn z4_table_possible_periods(p: usize, c: usize) -> &'static FNVHashSet {
     &Z4_TABLE[p - 2][c]
 }
 
 lazy_static! {
-    static ref Z4_TABLE: ArrayVec<[ArrayVec<[HashSet<usize>; 100]>; 100]> = {
-        let mut res = ArrayVec::<[ArrayVec<[HashSet<usize>; 100]>; 100]>::new();
+    static ref Z4_TABLE: Vec<Vec<FNVHashSet>> = {
+        let mut res = Vec::with_capacity(101);
         for p in 2..=100 {
-            let mut interm = ArrayVec::<[HashSet<usize>; 100]>::new();
+            let mut interm = Vec::with_capacity(101);
             if !prime(p) {
                 res.push(interm);
                 continue;
