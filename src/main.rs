@@ -65,6 +65,7 @@ pub fn search_z4_opt(height_max: i64, height_min: i64) {
 pub fn search_z3_opt(height_max: i64, _height_min: i64) {
     let bmax = ((height_max as f32).cbrt()).floor() as i64;
     (-height_max..=height_max).into_par_iter().for_each(|num_a| {
+            // println!("{}", num_a);
             for num_b in -height_max..=height_max {
                 for denom_a in -bmax..=bmax {
                     for denom_b in -bmax..=bmax {
@@ -82,11 +83,7 @@ pub fn search_z3_opt(height_max: i64, _height_min: i64) {
                             continue;
                         }
 
-                        let f = PolynomialInQw::from(
-                            vec![QwElement::one(), QwElement::zero(), QwElement::zero(), c]
-                        );
-
-                        if let Some(set) = possible_periods_search_qw(f, 1) {
+                        if let Some(set) = z3c_possible_periods_search(c, 1) {
                             println!("{}", format_search_result(c, set));
                         }
                     }
